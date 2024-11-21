@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Handlebar Text Substituter with Local Storage</title>
+    <style>
+        /* CSS styles to make the page look pretty */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: #fff;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+
+        label {
+            font-weight: bold;
+            margin-top: 20px;
+            display: block;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;            
+            color: #fff;
+            border: none;
+            font-size: 18px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        button#processText {
+            background-color: #4CAF50;
+        }
+
+        button#clearLocalStorage {
+            background-color: #BDBDBD;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .input-group {
+            margin-top: 15px;
+        }
+
+        #output {
+            background-color: #f9f9f9;
+            padding: 20px;
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-size: 16px;
+        }
+
+        @media (max-width: 600px) {
+            button {
+                font-size: 16px;
+                padding: 12px;
+            }
+
+            textarea, input[type="text"] {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Handlebar Text Substituter with Local Storage</h1>
+    <label for="sourceText">Enter your text with handlebars:</label>
+    <textarea id="sourceText" placeholder="Type your text here...">{{GREETING}}, my name is {{NAME}} and I am a {{PROFESSION}}.</textarea>
+    <button id="processText">Process Text</button>
+    <button id="clearLocalStorage">Clear Stored Storage</button>
+
+    <div id="replacementForm"></div>
+
+    <h2>Output Text:</h2>
+    <div id="output"></div>
+</div>
+
+<script>
+    // JavaScript code to handle the logic
+    document.getElementById('processText').addEventListener('click', function() {
+        const sourceText = document.getElementById('sourceText').value;
+        const handlebarRegex = /{{\s*([^{}\s]+)\s*}}/g;
+        let match;
+        const handlebars = new Set();
+
+        // Find all unique handlebars in the text
+        while ((match = handlebarRegex.exec(sourceText)) !== null) {
+            handlebars.add(match[0]);
+        }
+
+        const replacementForm = document.getElementById('replacementForm');
+        replacementForm.innerHTML = ''; // Clear previous inputs
+
+        // Create input fields for each handlebar
+        handlebars.forEach(handlebar => {
+            const key = handlebar.match(/{{\s*([^{}\s]+)\s*}}/)[1];
+
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+
+            const label = document.createElement('label');
+            label.for = key;
+            label.textContent = `Replacement for ${handlebar}:`;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = key;
+            input.placeholder = `Enter value for ${key}`;
+
+            // Retrieve stored value from local storage if available
+            const storedValue = localStorage.getItem('handlebar_' + key);
+            if (storedValue !== null) {
+                input.value = storedValue;
+            }
+
+            input.addEventListener('input', function() {
+                // Save the input value to local storage
+                localStorage.setItem('handlebar_' + key, input.value);
+                updateOutput();
+            });
+
+            inputGroup.appendChild(label);
+            inputGroup.appendChild(input);
+            replacementForm.appendChild(inputGroup);
+        });
+
+        // Update the output initially
+        updateOutput();
+    });
+
+    function updateOutput() {
+        const sourceText = document.getElementById('sourceText').value;
+        const handlebarRegex = /{{\s*([^{}\s]+)\s*}}/g;
+        let outputText = sourceText;
+
+        let match;
+        while ((match = handlebarRegex.exec(sourceText)) !== null) {
+            const fullHandlebar = match[0];
+            const key = match[1];
+            const inputElement = document.getElementById(key);
+            const value = inputElement ? inputElement.value : '';
+            const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+            outputText = outputText.replace(regex, value);
+        }
+
+        document.getElementById('output').textContent = outputText;
+    }
+
+    // Add ability to clear local storage for handlebars
+    document.getElementById('clearLocalStorage').addEventListener('click', function() {
+        const handlebarKeys = Object.keys(localStorage).filter(key => key.startsWith('handlebar_'));
+        handlebarKeys.forEach(key => localStorage.removeItem(key));
+        document.getElementById('processText').click();
+    });
+    
+    // Automatically process text and populate fields on page load if handlebars exist
+    window.addEventListener('load', function() {
+        document.getElementById('processText').click();
+    });
+</script>
+
+</body>
+</html>
