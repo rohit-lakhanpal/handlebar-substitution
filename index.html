@@ -109,7 +109,18 @@
 </div>
 
 <script>
-    // JavaScript code to handle the logic
+    // Fetch sourceText from GET parameter securely
+    const urlParams = new URLSearchParams(window.location.search);
+    let sourceTextParam = urlParams.get('sourceText');
+
+    if (sourceTextParam) {
+        const tempDiv = document.createElement('div');
+        tempDiv.textContent = sourceTextParam;
+        sourceTextParam = tempDiv.textContent;
+
+        document.getElementById('sourceText').value = sourceTextParam;
+    }
+
     document.getElementById('processText').addEventListener('click', function() {
         const sourceText = document.getElementById('sourceText').value;
         const handlebarRegex = /{{\s*([^{}\s]+)\s*}}/g;
